@@ -91,6 +91,10 @@ def segments_to_srt(segments):
         end_time = format_timestamp(segment['end'])
         text = segment['value'].strip()
         
+        # 确保文本不为空
+        if not text:
+            continue
+            
         srt_content.append(f"{i}")
         srt_content.append(f"{start_time} --> {end_time}")
         srt_content.append(text)
@@ -121,7 +125,7 @@ def words_to_srt(words_alignment):
         
         # 如果单词以标点结尾，则认为句子结束
         if word_text and word_text[-1] in '.!?。！？':
-            sentence_text = ''.join(current_sentence)
+            sentence_text = ' '.join(current_sentence)
             if sentence_text:
                 start_time = format_timestamp(current_start)
                 end_time = format_timestamp(current_end)
@@ -138,7 +142,7 @@ def words_to_srt(words_alignment):
     
     # 处理最后一个不完整的句子
     if current_sentence:
-        sentence_text = ''.join(current_sentence)
+        sentence_text = ' '.join(current_sentence)
         if sentence_text:
             start_time = format_timestamp(current_start)
             end_time = format_timestamp(current_end)
@@ -173,6 +177,7 @@ class ApplyWhisperNode:
     RETURN_NAMES = ("text", "segments_alignment", "words_alignment", "srt_text")
     FUNCTION = "apply_whisper"
     CATEGORY = "whisper"
+    OUTPUT_NODE = True
 
     def apply_whisper(self, audio, model, language="auto", prompt="", use_word_level_srt=False):
         # save audio bytes from VHS to file
@@ -213,12 +218,18 @@ class ApplyWhisperNode:
                 ApplyWhisperNode.languages_by_name = {v.lower(): k for k, v in whisper.tokenizer.LANGUAGES.items()}
             transcribe_args['language'] = ApplyWhisperNode.languages_by_name[language.lower()]
         
+        # 添加调试信息
+        print(f"开始Whisper转录，语言: {language}, 提示: {prompt}")
+        
         result = whisper_model.transcribe(audio_save_path, word_timestamps=True, **transcribe_args)
 
         segments = result['segments']
         segments_alignment = []
         words_alignment = []
 
+        # 添加调试信息
+        print(f"Whisper返回了 {len(segments)} 个段落")
+        
         for segment in segments:
             # create segment alignments
             segment_dict = {
@@ -228,19 +239,32 @@ class ApplyWhisperNode:
             }
             segments_alignment.append(segment_dict)
 
+            # 添加调试信息
+            print(f"段落 {len(segments_alignment)}: '{segment['text'].strip()}' ({segment['start']:.2f}-{segment['end']:.2f})")
+
             # create word alignments
-            for word in segment["words"]:
-                word_dict = {
-                    'value': word["word"].strip(),
-                    'start': word["start"],
-                    'end': word['end']
-                }
-                words_alignment.append(word_dict)
+            if "words" in segment:
+                for word in segment["words"]:
+                    word_dict = {
+                        'value': word["word"].strip(),
+                        'start': word["start"],
+                        'end': word['end']
+                    }
+                    words_alignment.append(word_dict)
 
         # 生成 SRT 文本
         if use_word_level_srt and words_alignment:
+            print("使用单词级时间戳生成SRT")
             srt_text = words_to_srt(words_alignment)
         else:
+            print("使用段落级时间戳生成SRT")
             srt_text = segments_to_srt(segments_alignment)
+
+        # 添加调试信息
+        print(f"生成的SRT内容:")
+        print("=" * 50)
+        print(srt_text)
+        print("=" * 50)
+        print(f"SRT字符数: {len(srt_text)}")
 
         return (result["text"].strip(), segments_alignment, words_alignment, srt_text)
