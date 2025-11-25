@@ -1,72 +1,123 @@
-# ComfyUI Whisper
+# ComfyUI Whisper SRT
 
-Transcribe audio and add subtitles to videos using [Whisper](https://github.com/openai/whisper/) in [ComfyUI](https://github.com/comfyanonymous/ComfyUI).
-Support multiple languages, prompt guidance and multiple whisper models.
+基于 [ComfyUI-Whisper](https://github.com/yuvraj108c/ComfyUI-Whisper) 开发的字幕生成插件，支持 SRT 格式字幕文件输出。
 
-![demo-image](https://github.com/yuvraj108c/ComfyUI-Whisper/blob/assets/recording.gif?raw=true)
+## 📋 许可证声明
 
-## ⭐ Support
-If you like my projects and wish to see updates and new features, please consider supporting me. It helps a lot! 
+本项目基于 [ComfyUI-Whisper](https://github.com/yuvraj108c/ComfyUI-Whisper) 开发，
+遵循 [Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International](https://creativecommons.org/licenses/by-nc-sa/4.0/) 许可证。
 
-[![ComfyUI-Depth-Anything-Tensorrt](https://img.shields.io/badge/ComfyUI--Depth--Anything--Tensorrt-blue?style=flat-square)](https://github.com/yuvraj108c/ComfyUI-Depth-Anything-Tensorrt)
-[![ComfyUI-Upscaler-Tensorrt](https://img.shields.io/badge/ComfyUI--Upscaler--Tensorrt-blue?style=flat-square)](https://github.com/yuvraj108c/ComfyUI-Upscaler-Tensorrt)
-[![ComfyUI-Dwpose-Tensorrt](https://img.shields.io/badge/ComfyUI--Dwpose--Tensorrt-blue?style=flat-square)](https://github.com/yuvraj108c/ComfyUI-Dwpose-Tensorrt)
-[![ComfyUI-Rife-Tensorrt](https://img.shields.io/badge/ComfyUI--Rife--Tensorrt-blue?style=flat-square)](https://github.com/yuvraj108c/ComfyUI-Rife-Tensorrt)
+### ✅ 允许的行为
+- 自由使用、修改和分发本软件
+- 用于个人、教育或非商业项目
+- 在注明原作者的情况下分享您的修改
 
-[![ComfyUI-Whisper](https://img.shields.io/badge/ComfyUI--Whisper-gray?style=flat-square)](https://github.com/yuvraj108c/ComfyUI-Whisper)
-[![ComfyUI_InvSR](https://img.shields.io/badge/ComfyUI__InvSR-gray?style=flat-square)](https://github.com/yuvraj108c/ComfyUI_InvSR)
-[![ComfyUI-Thera](https://img.shields.io/badge/ComfyUI--Thera-gray?style=flat-square)](https://github.com/yuvraj108c/ComfyUI-Thera)
-[![ComfyUI-Video-Depth-Anything](https://img.shields.io/badge/ComfyUI--Video--Depth--Anything-gray?style=flat-square)](https://github.com/yuvraj108c/ComfyUI-Video-Depth-Anything)
-[![ComfyUI-PiperTTS](https://img.shields.io/badge/ComfyUI--PiperTTS-gray?style=flat-square)](https://github.com/yuvraj108c/ComfyUI-PiperTTS)
+### ❌ 禁止的行为  
+- 将本软件用于商业目的
+- 销售或直接通过本软件盈利
+- 更改本软件的许可证条款
 
-[![buy-me-coffees](https://i.imgur.com/3MDbAtw.png)](https://www.buymeacoffee.com/yuvraj108cZ)
-[![paypal-donation](https://i.imgur.com/w5jjubk.png)](https://paypal.me/yuvraj108c)
----
+### 📝 使用要求
+- 保留原始作者的版权声明
+- 在衍生作品中采用相同的许可证
+- 明确标注基于原项目开发
 
-## Installation
+## 功能特性
 
-Install via [ComfyUI Manager](https://github.com/ltdrdata/ComfyUI-Manager)
+- 🎯 基于 OpenAI Whisper 的音频转录
+- 📝 自动生成带时间轴的 SRT 字幕文件
+- 🌍 支持多语言转录（中文、英文、日文等）
+- ⚡ 多种 Whisper 模型选择（tiny 到 large）
+- 🎨 灵活的字幕样式和位置设置
+- 💾 直接保存 SRT 文件，支持自定义文件名
 
-## Usage
+## 安装方法
 
-Load this [workflow](https://github.com/yuvraj108c/ComfyUI-Whisper/blob/master/example_workflows/whisper_video_subtitles_workflow.json) into ComfyUI
+### 通过 ComfyUI Manager 安装
+1. 打开 ComfyUI
+2. 进入 Manager 界面
+3. 搜索 "ComfyUI-Whisper_SRT"
+4. 点击安装
 
-Models are auto-downloaded to `/ComfyUI/models/stt/whisper`
+## 快速开始
 
-## Supported Models
-'tiny.en', 'tiny', 'base.en', 'base', 'small.en', 'small', 'medium.en', 'medium', 'large-v1', 'large-v2', 'large-v3', 'large', 'large-v3-turbo', 'turbo'
+1. 下载示例工作流：[whisper_video_srt.json](https://github.com/edisonchan/ComfyUI-Whisper_SRT/blob/master/example_workflows/whisper_video_srt.json)
+2. 在 ComfyUI 中加载工作流
+3. 连接音频输入节点
+4. 运行工作流生成字幕
 
-## Nodes
+## 核心节点
 
 ### Apply Whisper
+音频转录核心节点，支持：
+- 多语言识别（自动检测或手动指定）
+- 提示词引导转录
+- 单词级时间戳提取
+- 直接输出 SRT 格式字幕
 
-Transcribe audio and get timestamps for each segment and word.
+**输出端口：**
+- `text` - 纯文本转录结果
+- `srt_text` - 格式化的 SRT 字幕内容
+- `segments_alignment` - 段落时间对齐数据
+- `words_alignment` - 单词时间对齐数据
+
+### Save SRT
+字幕文件保存节点：
+- 支持自定义文件名
+- 自动添加 .srt 扩展名
+- 保存到 ComfyUI 输出目录
+- 实时预览字幕内容
 
 ### Add Subtitles To Frames
+视频帧字幕叠加节点：
+- 自定义字体、颜色、大小
+- 灵活定位（居中或指定坐标）
+- 生成字幕蒙版和裁剪区域
 
-Add subtitles on the video frames. You can specify font family, font color and x/y positions.
+## 模型支持
 
-### Add Subtitles To Background (Experimental)
+支持所有 Whisper 模型：
+- `tiny` / `tiny.en` - 轻量级，快速转录
+- `base` / `base.en` - 平衡速度与精度
+- `small` / `small.en` - 推荐用于一般用途
+- `medium` / `medium.en` - 高质量转录
+- `large-v1` / `large-v2` / `large-v3` - 最高精度
+- `turbo` - 优化速度版本
 
-Add subtitles like wordcloud on blank frames
+模型自动下载到：`ComfyUI/models/stt/whisper/`
 
-## Updates
-### 27 August 2025
-- Merge https://github.com/yuvraj108c/ComfyUI-Whisper/pull/22 by [@francislabountyjr](https://github.com/francislabountyjr) for model patcher, more whisper models support, comfyui model directory support
-- Merge https://github.com/yuvraj108c/ComfyUI-Whisper/pull/18 by [@qy8502](https://github.com/qy8502) for Prompt Guidance support
-- Support YRDZST Semibold Font
-### 2 May 2025
-- Merge https://github.com/yuvraj108c/ComfyUI-Whisper/pull/15 by [@niknah](https://github.com/niknah) for language selection
+## 使用示例
 
-## Credits
+### 基础字幕生成
+音频文件 → Apply Whisper → Save SRT
 
-- [comfyanonymous/ComfyUI](https://github.com/comfyanonymous/ComfyUI)
+### 视频字幕叠加
+视频帧 → Add Subtitles To Frames → 输出视频
+Apply Whisper (提供时间戳)
 
-- [Kosinkadink/ComfyUI-VideoHelperSuite](https://github.com/Kosinkadink/ComfyUI-VideoHelperSuite)
+### 高级工作流
+完整的工作流示例请参考 [示例文件](https://github.com/edisonchan/ComfyUI-Whisper_SRT/blob/master/example_workflows/whisper_video_srt.json)
 
-- [melMass/comfy_mtb](https://github.com/melMass/comfy_mtb)
+## 技术特点
 
-## License
+- **内存优化**：集成 ComfyUI 模型管理系统，智能加载/卸载模型
+- **时间精度**：支持毫秒级时间戳，符合 SRT 标准格式
+- **格式兼容**：生成的 SRT 文件兼容主流视频播放器和编辑软件
+- **灵活配置**：所有参数均可通过节点界面调整
 
-[Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International (CC BY-NC-SA 4.0)](https://creativecommons.org/licenses/by-nc-sa/4.0/)
+## 更新记录
 
+### v1.0.0
+- 基于 ComfyUI-Whisper 开发
+- 新增 SRT 字幕文件输出功能
+- 添加 Save SRT 保存节点
+- 优化模型加载和内存管理
+
+## 致谢
+
+本项目基于 [yuvraj108c/ComfyUI-Whisper](https://github.com/yuvraj108c/ComfyUI-Whisper) 开发，
+特别感谢原作者的优秀工作和开源贡献。
+
+---
+
+*本项目遵循 CC BY-NC-SA 4.0 许可证，仅供非商业用途使用*
