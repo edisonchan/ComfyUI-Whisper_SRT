@@ -75,6 +75,79 @@ class WhisperPatcher(comfy.model_patcher.ModelPatcher):
             mm.soft_empty_cache()
         return super().unpatch_model(device_to, unpatch_weights, *args, **kwargs)
 
+def format_timestamp(seconds):
+    """将秒数转换为 SRT 时间格式: HH:MM:SS,mmm"""
+    hours = int(seconds // 3600)
+    minutes = int((seconds % 3600) // 60)
+    seconds_remainder = seconds % 60
+    milliseconds = int((seconds_remainder - int(seconds_remainder)) * 1000)
+    return f"{hours:02d}:{minutes:02d}:{int(seconds_remainder):02d},{milliseconds:03d}"
+
+def segments_to_srt(segments):
+    """将 Whisper 分段转换为 SRT 格式字符串"""
+    srt_content = []
+    for i, segment in enumerate(segments, 1):
+        start_time = format_timestamp(segment['start'])
+        end_time = format_timestamp(segment['end'])
+        text = segment['value'].strip()
+        
+        srt_content.append(f"{i}")
+        srt_content.append(f"{start_time} --> {end_time}")
+        srt_content.append(text)
+        srt_content.append("")  # 空行分隔
+        
+    return "\n".join(srt_content)
+
+def words_to_srt(words_alignment):
+    """将单词级时间戳转换为 SRT 格式字符串"""
+    srt_content = []
+    index = 1
+    
+    # 将单词按句子分组
+    current_sentence = []
+    current_start = None
+    current_end = 0
+    
+    for word in words_alignment:
+        word_text = word['value'].strip()
+        if not word_text:
+            continue
+            
+        if current_start is None:
+            current_start = word['start']
+        
+        current_sentence.append(word_text)
+        current_end = word['end']
+        
+        # 如果单词以标点结尾，则认为句子结束
+        if word_text and word_text[-1] in '.!?。！？':
+            sentence_text = ''.join(current_sentence)
+            if sentence_text:
+                start_time = format_timestamp(current_start)
+                end_time = format_timestamp(current_end)
+                
+                srt_content.append(f"{index}")
+                srt_content.append(f"{start_time} --> {end_time}")
+                srt_content.append(sentence_text)
+                srt_content.append("")
+                
+                index += 1
+            
+            current_sentence = []
+            current_start = None
+    
+    # 处理最后一个不完整的句子
+    if current_sentence:
+        sentence_text = ''.join(current_sentence)
+        if sentence_text:
+            start_time = format_timestamp(current_start)
+            end_time = format_timestamp(current_end)
+            
+            srt_content.append(f"{index}")
+            srt_content.append(f"{start_time} --> {end_time}")
+            srt_content.append(sentence_text)
+    
+    return "\n".join(srt_content)
 
 class ApplyWhisperNode:
     languages_by_name = None
@@ -92,16 +165,16 @@ class ApplyWhisperNode:
                     [s.capitalize() for s in sorted(list(whisper.tokenizer.LANGUAGES.values())) ],
                 ),
                 "prompt": ("STRING", {"default":""}),
+                "use_word_level_srt": ("BOOLEAN", {"default": False}),
             }
         }
 
-    RETURN_TYPES = ("STRING", "whisper_alignment", "whisper_alignment")
-    RETURN_NAMES = ("text", "segments_alignment", "words_alignment")
+    RETURN_TYPES = ("STRING", "whisper_alignment", "whisper_alignment", "STRING")
+    RETURN_NAMES = ("text", "segments_alignment", "words_alignment", "srt_text")
     FUNCTION = "apply_whisper"
     CATEGORY = "whisper"
 
-    def apply_whisper(self, audio, model, language, prompt):
-
+    def apply_whisper(self, audio, model, language="auto", prompt="", use_word_level_srt=False):
         # save audio bytes from VHS to file
         temp_dir = folder_paths.get_temp_directory()
         os.makedirs(temp_dir, exist_ok=True)
@@ -164,4 +237,10 @@ class ApplyWhisperNode:
                 }
                 words_alignment.append(word_dict)
 
-        return (result["text"].strip(), segments_alignment, words_alignment)
+        # 生成 SRT 文本
+        if use_word_level_srt and words_alignment:
+            srt_text = words_to_srt(words_alignment)
+        else:
+            srt_text = segments_to_srt(segments_alignment)
+
+        return (result["text"].strip(), segments_alignment, words_alignment, srt_text)
